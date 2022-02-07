@@ -13,12 +13,18 @@ import { metaTagsFragment, responsiveImageFragment } from "../../lib/fragments";
 import LanguageBar from "../../components/language-bar";
 
 export async function getStaticPaths({ locales }) {
-  const data = await request({ query: `{ allPostEnglishes { slug } }` });
+  const { allPostEnglishes } = await request({
+    query: `{ allPostEnglishes { slug } }`,
+  });
+  const { allPostItalians } = await request({
+    query: `{ allPostItalians { slug } }`,
+  });
   const pathsArray = [];
-  data.allPostEnglishes.map((post) => {
-    locales.map((language) => {
-      pathsArray.push({ params: { slug: post.slug }, locale: language });
-    });
+  allPostEnglishes.map((post) => {
+    pathsArray.push({ params: { slug: post.slug }, locale: "en" });
+  });
+  allPostItalians.map((post) => {
+    pathsArray.push({ params: { slug: post.slug }, locale: "it" });
   });
 
   return {
@@ -139,6 +145,7 @@ export default function Post({
   const site = data.site;
   const post = data[postName];
   const allPosts = data[allPostsName];
+  console.log(post);
 
   const metaTags = post.seo.concat(site.favicon);
 
