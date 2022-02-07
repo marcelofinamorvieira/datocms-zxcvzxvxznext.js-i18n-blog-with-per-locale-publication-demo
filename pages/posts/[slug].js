@@ -13,9 +13,9 @@ import { metaTagsFragment, responsiveImageFragment } from "../../lib/fragments";
 import LanguageBar from "../../components/language-bar";
 
 export async function getStaticPaths({ locales }) {
-  const data = await request({ query: `{ allPosts { slug } }` });
+  const data = await request({ query: `{ allPostEnglishes { slug } }` });
   const pathsArray = [];
-  data.allPosts.map((post) => {
+  data.allPostEnglishes.map((post) => {
     locales.map((language) => {
       pathsArray.push({ params: { slug: post.slug }, locale: language });
     });
@@ -28,6 +28,16 @@ export async function getStaticPaths({ locales }) {
 }
 
 export async function getStaticProps({ params, preview = false, locale }) {
+  const schemaMapping = {
+    postName: {
+      en: "postEnglish",
+      it: "postItalian",
+    },
+    allPostsName: {
+      en: "allPostEnglishes",
+      it: "allPostItalians",
+    },
+  };
   const formattedLocale = locale.split("-")[0];
   const graphqlRequest = {
     query: `
@@ -37,7 +47,7 @@ export async function getStaticProps({ params, preview = false, locale }) {
             ...metaTagsFragment
           }
         }
-        post(locale: ${formattedLocale}, filter: {slug: {eq: $slug}}) {
+        ${schemaMapping.postName[formattedLocale]}(locale: ${formattedLocale}, filter: {slug: {eq: $slug}}) {
           seo: _seoMetaTags {
             ...metaTagsFragment
           }
@@ -47,10 +57,10 @@ export async function getStaticProps({ params, preview = false, locale }) {
             value
             blocks {
               __typename
-              ...on ImageBlockRecord {
+              ... on ImageBlockRecord {
                 id
                 image {
-                  responsiveImage(imgixParams: {fm: jpg, fit: crop, w: 2000, h: 1000 }) {
+                  responsiveImage(imgixParams: {fm: jpg, fit: crop, w: 2000, h: 1000}) {
                     ...responsiveImageFragment
                   }
                 }
@@ -58,11 +68,11 @@ export async function getStaticProps({ params, preview = false, locale }) {
             }
           }
           date
-          ogImage: coverImage{
-            url(imgixParams: {fm: jpg, fit: crop, w: 2000, h: 1000 })
+          ogImage: coverImage {
+            url(imgixParams: {fm: jpg, fit: crop, w: 2000, h: 1000})
           }
           coverImage {
-            responsiveImage(imgixParams: {fm: jpg, fit: crop, w: 2000, h: 1000 }) {
+            responsiveImage(imgixParams: {fm: jpg, fit: crop, w: 2000, h: 1000}) {
               ...responsiveImageFragment
             }
           }
@@ -73,14 +83,13 @@ export async function getStaticProps({ params, preview = false, locale }) {
             }
           }
         }
-
-        morePosts: allPosts(locale: ${formattedLocale}, orderBy: date_DESC, first: 2, filter: {slug: {neq: $slug}}) {
+        ${schemaMapping.allPostsName[formattedLocale]}(locale: ${formattedLocale}, first: "2", filter: {slug: {neq: $slug}}) {
           title
           slug
           excerpt
           date
           coverImage {
-            responsiveImage(imgixParams: {fm: jpg, fit: crop, w: 2000, h: 1000 }) {
+            responsiveImage(imgixParams: {fm: jpg, fit: crop, w: 2000, h: 1000}) {
               ...responsiveImageFragment
             }
           }
@@ -114,14 +123,22 @@ export async function getStaticProps({ params, preview = false, locale }) {
             enabled: false,
             initialData: await request(graphqlRequest),
           },
+      postName: schemaMapping.postName[formattedLocale],
+      allPostsName: schemaMapping.allPostsName[formattedLocale],
     },
   };
 }
 
-export default function Post({ subscription, preview }) {
-  const {
-    data: { site, post, morePosts },
-  } = useQuerySubscription(subscription);
+export default function Post({
+  subscription,
+  preview,
+  postName,
+  allPostsName,
+}) {
+  const data = useQuerySubscription(subscription).data;
+  const site = data.site;
+  const post = data[postName];
+  const allPosts = data[allPostsName];
 
   const metaTags = post.seo.concat(site.favicon);
 
@@ -141,7 +158,7 @@ export default function Post({ subscription, preview }) {
           <PostBody content={post.content} />
         </article>
         <SectionSeparator />
-        {morePosts.length > 0 && <MoreStories posts={morePosts} />}
+        {allPosts.length > 0 && <MoreStories posts={allPosts} />}
       </Container>
     </Layout>
   );
