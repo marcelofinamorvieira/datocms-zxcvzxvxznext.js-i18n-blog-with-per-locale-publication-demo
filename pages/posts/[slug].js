@@ -13,19 +13,17 @@ import { metaTagsFragment, responsiveImageFragment } from "../../lib/fragments";
 import LanguageBar from "../../components/language-bar";
 
 export async function getStaticPaths({ locales }) {
-  const { allPostEnglishes } = await request({
-    query: `{ allPostEnglishes { slug } }`,
-  });
-  const { allPostItalians } = await request({
-    query: `{ allPostItalians { slug } }`,
-  });
   const pathsArray = [];
-  allPostEnglishes.map((post) => {
-    pathsArray.push({ params: { slug: post.slug }, locale: "en" });
-  });
-  allPostItalians.map((post) => {
-    pathsArray.push({ params: { slug: post.slug }, locale: "it" });
-  });
+  for (const locale of locales) {
+    const { allPostLocalizations: localeSlugs } = await request({
+      query: `{ allPostLocalizations(locale: ${locale}, filter: {title: {isBlank: "false"}}) {
+        slug
+      } }`,
+    });
+    localeSlugs.map((localeSlug) => {
+      pathsArray.push({ params: { slug: localeSlug.slug }, locale });
+    });
+  }
 
   return {
     paths: pathsArray,
@@ -34,16 +32,6 @@ export async function getStaticPaths({ locales }) {
 }
 
 export async function getStaticProps({ params, preview = false, locale }) {
-  const schemaMapping = {
-    postName: {
-      en: "postEnglish",
-      it: "postItalian",
-    },
-    allPostsName: {
-      en: "allPostEnglishes",
-      it: "allPostItalians",
-    },
-  };
   const formattedLocale = locale.split("-")[0];
   const graphqlRequest = {
     query: `
@@ -53,7 +41,7 @@ export async function getStaticProps({ params, preview = false, locale }) {
             ...metaTagsFragment
           }
         }
-        ${schemaMapping.postName[formattedLocale]}(locale: ${formattedLocale}, filter: {slug: {eq: $slug}}) {
+        postLocalization(locale: ${formattedLocale}, filter: {title: {isBlank: "false"}, slug: {eq: $slug}}) {
           seo: _seoMetaTags {
             ...metaTagsFragment
           }
@@ -89,7 +77,7 @@ export async function getStaticProps({ params, preview = false, locale }) {
             }
           }
         }
-        ${schemaMapping.allPostsName[formattedLocale]}(locale: ${formattedLocale}, first: "2", filter: {slug: {neq: $slug}}) {
+        allPostLocalizations(locale: ${formattedLocale}, filter: {title: {isBlank: "false"}, slug: {neq: $slug}}, first: "2") {
           title
           slug
           excerpt
@@ -129,23 +117,16 @@ export async function getStaticProps({ params, preview = false, locale }) {
             enabled: false,
             initialData: await request(graphqlRequest),
           },
-      postName: schemaMapping.postName[formattedLocale],
-      allPostsName: schemaMapping.allPostsName[formattedLocale],
     },
   };
 }
 
-export default function Post({
-  subscription,
-  preview,
-  postName,
-  allPostsName,
-}) {
+export default function Post({ subscription, preview }) {
   const data = useQuerySubscription(subscription).data;
+
   const site = data.site;
-  const post = data[postName];
-  const allPosts = data[allPostsName];
-  console.log(post);
+  const post = data.postLocalization;
+  const allPosts = data.allPostLocalizations;
 
   const metaTags = post.seo.concat(site.favicon);
 

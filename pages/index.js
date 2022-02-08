@@ -28,39 +28,20 @@ export async function getStaticProps({ preview, locale }) {
         }
         allPosts {
           localeVersion(locale: ${formattedLocale}) {
-            ... on PostEnglishRecord {
-              title
-                slug
-                excerpt
-                date
-                coverImage {
-                  responsiveImage(imgixParams: {fm: jpg, fit: crop, w: 2000, h: 1000 }) {
-                    ...responsiveImageFragment
-                  }
-                }
-                author {
-                  name
-                  picture {
-                    url(imgixParams: {fm: jpg, fit: crop, w: 100, h: 100, sat: -100})
-                  }
-                }
+            title
+            slug
+            excerpt
+            date
+            coverImage {
+              responsiveImage(imgixParams: {fm: jpg, fit: crop, w: 2000, h: 1000 }) {
+                ...responsiveImageFragment
+              }
             }
-            ... on PostItalianRecord {
-              title
-                slug
-                excerpt
-                date
-                coverImage {
-                  responsiveImage(imgixParams: {fm: jpg, fit: crop, w: 2000, h: 1000 }) {
-                    ...responsiveImageFragment
-                  }
-                }
-                author {
-                  name
-                  picture {
-                    url(imgixParams: {fm: jpg, fit: crop, w: 100, h: 100, sat: -100})
-                  }
-                }
+            author {
+              name
+              picture {
+                url(imgixParams: {fm: jpg, fit: crop, w: 100, h: 100, sat: -100})
+              }
             }
           }
         }
@@ -93,7 +74,6 @@ export default function Index({ subscription }) {
   const {
     data: { allPosts, site, blog },
   } = useQuerySubscription(subscription);
-
   const heroPost = allPosts[0];
   const morePosts = allPosts.slice(1);
   const metaTags = blog.seo.concat(site.favicon);
