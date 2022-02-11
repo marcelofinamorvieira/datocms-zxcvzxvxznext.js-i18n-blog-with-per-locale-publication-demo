@@ -16,7 +16,7 @@ The purpose of this repo is to have a quick start reference that can be set up w
 
 3. Let DatoCMS set everything up for you clicking this button:
 
-[![Clone DatoCMS project](https://dashboard.datocms.com/clone/button.svg)](https://dashboard.datocms.com/deploy?repo=YOUR-GITHUB-REPO)
+[![Clone DatoCMS project](https://dashboard.datocms.com/clone/button.svg)](https://dashboard.datocms.com/deploy?repo=marcelofinamorvieira%2Fnext.js-i18n-blog-demo-with-per-locale-publication%3Amain)
 
 ### Local setup
 
